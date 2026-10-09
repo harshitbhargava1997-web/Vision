@@ -1,39 +1,33 @@
-# Literacy Portal Literacy Portal — starter
+# Literacy Portal — Streamlit Assessor
 
-A new, separate Next.js app for teachers and school leaders. It is independent of the existing Streamlit deployment and does not edit or replace it.
+Python conversion of the supplied Next.js starter. Includes assessor sign-in, overview, teacher-readiness rubric for Nursery–Grade 2, evidence links, coaching notes, follow-up dates, saved history, and filtered CSV export.
 
-## What is in this starter
+## Deploy to Streamlit Community Cloud
 
-- App Router with TypeScript and responsive portal screens.
-- Supabase email/password sign-in using cookie-based server-side sessions.
-- Protected dashboard and sign-out.
-- Initial navigation and literacy progression for Nursery, LKG, UKG, Grade 1 and Grade 2.
-- Teacher readiness and student progress are presented as the two connected workstreams.
-
-The dashboard is a signed-in shell, not a live assessment system yet. It deliberately does not read or write your existing tables until we review their exact schemas and access policies. It contains no production data and makes no database changes.
+1. Extract this ZIP. Upload the CONTENTS of streamlit-assessor to a new GitHub repository, or a separate folder/branch in Vision. Keep app.py and requirements.txt together. Include .streamlit/config.toml.
+2. Open https://share.streamlit.io and choose Create app. Select your GitHub repository and branch, then set the main file path to app.py (or your-folder/app.py if nested).
+3. In Advanced settings select Python 3.11. Paste secrets.example.toml into Secrets. Leave DEMO_MODE = "true" for the initial smoke test.
+4. Deploy. In New assessment create a sample assessment, then check Assessment history and download the CSV.
+5. To enable persistent real records, run setup.sql once in your Supabase SQL Editor. It creates literacy_assessors and literacy_assessments. Do not rerun it after creation; it intentionally fails if those tables already exist.
+6. Create an email/password user in Supabase Authentication. Copy that user's UUID and run the commented insert at the bottom of setup.sql, replacing ACTUAL-AUTH-USER-UUID.
+7. In Streamlit Secrets set DEMO_MODE = "false", your project's SUPABASE_URL, and SUPABASE_PUBLISHABLE_KEY. Save, restart and sign in. Use a publishable key (or legacy anon key), never a service-role key.
+8. Verify: save and reload an assessment; sign out; check that another authorized assessor cannot see your records and an unapproved account cannot assess. Database RLS enforces per-assessor ownership.
 
 ## Run locally
 
-1. Install Node.js 20.9 or newer and npm.
-2. In this directory, install dependencies: `npm install`.
-3. Copy `.env.example` to `.env.local`.
-4. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from the Supabase project's Connect / API settings. Use the publishable key; never put a service-role key in a `NEXT_PUBLIC_*` variable.
-5. In Supabase Auth URL Configuration, add `http://localhost:3000` to Site URL / redirect URLs for local testing.
-6. Create or enable a test user in Supabase Auth.
-7. Run `npm run dev` and open `http://localhost:3000`.
+Use Python 3.11:
 
-## Deploy as a separate Vercel project
+    python -m pip install -r requirements.txt
+    python -m streamlit run app.py
 
-Push this folder to its own GitHub repository, import that repository into Vercel, select Next.js, then add the same two environment variables to the Vercel project. Add the Vercel deployment URL to Supabase Auth's allowed redirect URLs. Deploy first to a preview URL and test sign-in/sign-out before sharing it with staff. This does not affect Streamlit unless someone explicitly changes that deployment's configuration.
+Default mode is a session-only demo. For real persistence copy secrets.example.toml to .streamlit/secrets.toml and configure as above. Never commit secrets.toml.
 
-## Before connecting real records
+## Scope and data
 
-Review the actual Supabase table definitions and RLS policies. Then agree the additive app tables for school membership, role (teacher, coordinator, principal, academic consultant, owner), class rosters, competency assessment results, and reviewer feedback. Every read/write path must be constrained by school membership in PostgreSQL RLS. Do not depend on hiding UI links for authorization. Preserve the existing `teacher_records` and `classroom_observations` data and policies; do not run the older Streamlit migration as part of this app setup.
+The original archive was a login/dashboard shell, so there is no teacher submission database to migrate. This version adds assessor-entered teacher-readiness records. It does not connect teacher_records, classroom_observations, a school roster, student assessments, or an incoming submission queue. Each approved assessor sees only their own assessments; school leader and shared school access need membership policies in a future extension.
 
-## Project notes
+The rubric is an editable working rubric rather than a validated assessment. Unobserved competencies are excluded from the mean. Records are append-only for observation history. Evidence is an external HTTPS link; access must already be granted by the evidence owner. Demo data disappears when the browser session ends. Real records remain in Supabase across Streamlit restarts.
 
-- `proxy.ts` refreshes/verifies Supabase Auth cookies for the App Router.
-- `src/app/actions.ts` contains server-side sign-in and sign-out actions.
-- `src/lib/supabase/` contains separate server and proxy clients.
-- No Supabase credentials are included in the project.
+## Validation
 
+See VALIDATION.md for checks run during preparation. No live hosting account or production database is configured in this package. The ZIP is deployment-ready source, not a published Streamlit URL.
